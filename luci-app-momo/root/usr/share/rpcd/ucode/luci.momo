@@ -13,28 +13,41 @@ const methods = {
 	},
 	version: {
 		call: function() {
+			const paths = get_paths();
+			const version_file = paths.version_file_path;
+			let result = { app: '', core: '' };
+
+			// try to read from cache file first
+			if (access(version_file) == 0) {
+				const cached = json(readfile(version_file));
+				if (cached) {
+					return cached;
+				}
+			}
+
+			// fallback: get version by executing commands
 			let process;
-			let app = '';
 			if (system('command -v opkg') == 0) {
 				process = popen(`opkg list-installed luci-app-momo | cut -d ' ' -f 3`);
 				if (process) {
-					app = trim(process.read('all'));
+					result.app = trim(process.read('all'));
 					process.close();
 				}
 			} else if (system('command -v apk') == 0) {
 				process = popen(`apk list -I luci-app-momo | cut -d ' ' -f 1 | cut -d '-' -f 4`);
 				if (process) {
-					app = trim(process.read('all'));
+					result.app = trim(process.read('all'));
 					process.close();
 				}
 			}
-			let core = '';
+
 			process = popen(`sing-box version | grep sing-box | cut -d ' ' -f 3`);
 			if (process) {
-				core = trim(process.read('all'));
+				result.core = trim(process.read('all'));
 				process.close();
 			}
-			return { app: app, core: core };
+
+			return result;
 		}
 	},
 	profile: {

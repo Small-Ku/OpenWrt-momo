@@ -164,6 +164,8 @@ start_service() {
 		fi
 		log "Profile" "Check passed."
 	fi
+	# cache version
+	cache_version
 	# test profile
 	if [ "$test_profile" = 1 ]; then
 		log "Profile" "Testing..."
@@ -381,6 +383,8 @@ cleanup() {
 	done
 	# delete started flag
 	rm "$STARTED_FLAG_PATH" > /dev/null 2>&1
+	# delete version cache
+	rm "$VERSION_FILE_PATH" > /dev/null 2>&1
 	# revert fix compatible with dockerd
 	## kmod-br-netfilter
 	if rm "$BRIDGE_NF_CALL_IPTABLES_FLAG_PATH" > /dev/null 2>&1; then
@@ -392,6 +396,26 @@ cleanup() {
 	# delete cron
 	sed -i "/#momo/d" "/etc/crontabs/root" > /dev/null 2>&1
 	/etc/init.d/cron restart
+}
+
+cache_version() {
+	local app core
+	# get app version
+	if command -v opkg > /dev/null 2>&1; then
+		app=$(opkg list-installed luci-app-momo 2>/dev/null | cut -d ' ' -f 3)
+	elif command -v apk > /dev/null 2>&1; then
+		app=$(apk list -I luci-app-momo 2>/dev/null | cut -d ' ' -f 1 | cut -d '-' -f 4)
+	fi
+	# get core version
+	if [ -x "$PROG" ]; then
+		core=$($PROG version 2>/dev/null | grep sing-box | cut -d ' ' -f 3)
+	fi
+	# write to cache file
+	json_init
+	json_add_string app "$app"
+	json_add_string core "$core"
+	json_dump > "$VERSION_FILE_PATH"
+	json_cleanup
 }
 
 update_subscription() {

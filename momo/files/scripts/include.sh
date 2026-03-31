@@ -40,6 +40,7 @@ DEBUG_LOG_PATH="$LOG_DIR/debug.log"
 TEMP_DIR="/var/run/momo"
 PID_FILE_PATH="$TEMP_DIR/momo.pid"
 STARTED_FLAG_PATH="$TEMP_DIR/started.flag"
+VERSION_FILE_PATH="$TEMP_DIR/version.json"
 BRIDGE_NF_CALL_IPTABLES_FLAG_PATH="$TEMP_DIR/bridge_nf_call_iptables.flag"
 BRIDGE_NF_CALL_IP6TABLES_FLAG_PATH="$TEMP_DIR/bridge_nf_call_ip6tables.flag"
 
@@ -75,6 +76,7 @@ get_paths() {
 	json_add_string temp_dir "$TEMP_DIR"
 	json_add_string pid_file_path "$PID_FILE_PATH"
 	json_add_string started_flag_path "$STARTED_FLAG_PATH"
+	json_add_string version_file_path "$VERSION_FILE_PATH"
 	json_add_string bridge_nf_call_iptables_flag_path "$BRIDGE_NF_CALL_IPTABLES_FLAG_PATH"
 	json_add_string bridge_nf_call_ip6tables_flag_path "$BRIDGE_NF_CALL_IP6TABLES_FLAG_PATH"
 
