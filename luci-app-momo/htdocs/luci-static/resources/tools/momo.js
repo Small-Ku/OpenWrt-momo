@@ -31,6 +31,8 @@ const callMomoVersion = rpc.declare({
     expect: { '': {} }
 });
 
+let versionCache = null;
+
 const callMomoProfile = rpc.declare({
     object: 'luci.momo',
     method: 'profile',
@@ -82,7 +84,13 @@ return baseclass.extend({
     },
 
     version: function () {
-        return callMomoVersion();
+        if (versionCache !== null) {
+            return Promise.resolve(versionCache);
+        }
+        return callMomoVersion().then(function (result) {
+            versionCache = result;
+            return result;
+        });
     },
 
     profile: function (defaults) {
