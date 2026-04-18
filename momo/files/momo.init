@@ -10,6 +10,15 @@ PROG="/usr/bin/sing-box"
 
 extra_command 'update_subscription' 'Update subscription by section id'
 
+profile_uses_dhcp_dns() {
+	local dns_type dns_address
+	dns_type=$(jsonfilter -q -i "$RUN_PROFILE_PATH" -e "@['dns']['servers'][*]['type']")
+	dns_address=$(jsonfilter -q -i "$RUN_PROFILE_PATH" -e "@['dns']['servers'][*]['address']")
+	echo "$dns_type" | grep -q -w "dhcp" && return 0
+	echo "$dns_address" | grep -q "dhcp://" && return 0
+	return 1
+}
+
 boot_func() {
 	# prepare files
 	prepare_files
@@ -123,6 +132,16 @@ start_service() {
 		log "App" "Exit."
 		return
 	fi
+	# avoid sing-box startup deadlock when DHCP DNS is used but no default route exists
+	if profile_uses_dhcp_dns; then
+		if ! ip -4 route show default 2>/dev/null | grep -q . && ! ip -6 route show default 2>/dev/null | grep -q .; then
+			log "Profile" "Check failed."
+			log "Profile" "Profile DNS uses DHCP upstream, but no default interface/route is available."
+			log "Profile" "Fix WAN/default route first, or change DNS server in profile to static resolvers."
+			log "App" "Exit."
+			return
+		fi
+	fi
 	# check profile
 	if [ "$core_only" = 0 ] && [ "$proxy_enabled" = 1 ]; then
 		log "Profile" "Checking..."
@@ -188,7 +207,8 @@ start_service() {
 		procd_set_param reload_signal HUP
 	fi
 	procd_set_param pidfile "$PID_FILE_PATH"
-	procd_set_param respawn
+	# stop repeated crash loops from locking LuCI/rpcd for long periods
+	procd_set_param respawn 3600 5 5
 	procd_append_param limits as="${rlimit_address_space_soft:-unlimited} ${rlimit_address_space_hard:-unlimited}"
 	procd_append_param limits data="${rlimit_data_soft:-unlimited} ${rlimit_data_hard:-unlimited}"
 	procd_append_param limits stack="${rlimit_stack_soft:-unlimited} ${rlimit_stack_hard:-unlimited}"

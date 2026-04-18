@@ -55,7 +55,7 @@ const methods = {
 		call: function(req) {
 			const paths = get_paths();
 			const defaults = req.args?.defaults ?? {};
-			const profile = json(readfile(paths.run_profile_path));
+			const profile = json(readfile(paths.run_profile_path)) ?? {};
 			return merge_exists(defaults, profile);
 		}
 	},
@@ -81,9 +81,9 @@ const methods = {
 			const body = req.args?.body;
 
 			const paths = get_paths();
-			const profile = json(readfile(paths.run_profile_path));
-			const api_listen = profile['experimental']['clash_api']['external_controller'];
-			const api_secret = profile['experimental']['clash_api']['secret'];
+			const profile = json(readfile(paths.run_profile_path)) ?? {};
+			const api_listen = profile['experimental'] && profile['experimental']['clash_api'] && profile['experimental']['clash_api']['external_controller'];
+			const api_secret = profile['experimental'] && profile['experimental']['clash_api'] && profile['experimental']['clash_api']['secret'];
 
 			if (!api_listen) {
 				return result;
