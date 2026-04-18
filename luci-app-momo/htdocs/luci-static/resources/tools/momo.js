@@ -32,6 +32,9 @@ const callMomoVersion = rpc.declare({
 });
 
 let versionCache = null;
+let versionCachePromise = null;
+let pathsCache = null;
+let pathsCachePromise = null;
 
 const callMomoProfile = rpc.declare({
     object: 'luci.momo',
@@ -68,7 +71,19 @@ const callMomoDebug = rpc.declare({
 
 return baseclass.extend({
     getPaths: async function () {
-        return callMomoGetPaths();
+        if (pathsCache !== null) {
+            return Promise.resolve(pathsCache);
+        }
+        if (pathsCachePromise !== null) {
+            return pathsCachePromise;
+        }
+        pathsCachePromise = callMomoGetPaths().then(function (result) {
+            pathsCache = result;
+            return result;
+        }).finally(function () {
+            pathsCachePromise = null;
+        });
+        return pathsCachePromise;
     },
 
     status: async function () {
@@ -87,10 +102,16 @@ return baseclass.extend({
         if (versionCache !== null) {
             return Promise.resolve(versionCache);
         }
-        return callMomoVersion().then(function (result) {
+        if (versionCachePromise !== null) {
+            return versionCachePromise;
+        }
+        versionCachePromise = callMomoVersion().then(function (result) {
             versionCache = result;
             return result;
+        }).finally(function () {
+            versionCachePromise = null;
         });
+        return versionCachePromise;
     },
 
     profile: function (defaults) {

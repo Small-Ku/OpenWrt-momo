@@ -22,13 +22,15 @@ return view.extend({
         return Promise.all([
             uci.load('momo'),
             momo.status(),
-            momo.listProfiles()
+            momo.listProfiles(),
+            momo.version()
         ]);
     },
     render: function (data) {
         const subscriptions = uci.sections('momo', 'subscription');
         const running = data[1];
         const profiles = data[2];
+        const version = data[3] ?? {};
 
         let m, s, o;
 
@@ -40,18 +42,14 @@ return view.extend({
         o = s.option(form.Value, '_app_version', _('App Version'));
         o.readonly = true;
         o.load = function () {
-            return momo.version().then(function (v) {
-                return v.app || '';
-            });
+            return version.app || '';
         };
         o.write = function () { };
 
         o = s.option(form.Value, '_core_version', _('Core Version'));
         o.readonly = true;
         o.load = function () {
-            return momo.version().then(function (v) {
-                return v.core || '';
-            });
+            return version.core || '';
         };
         o.write = function () { };
 
